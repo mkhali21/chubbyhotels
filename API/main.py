@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
 # Database URL - update it to your MySQL connection details
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin:Snape88!@chubby-db.cn0geogwil7k.us-east-2.rds.amazonaws.com/ChubbyHotels"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin:CSC394!@database-1.cn0geogwil7k.us-east-2.rds.amazonaws.com/ChubbyHotels"
 
 # Create the database engine
 engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
