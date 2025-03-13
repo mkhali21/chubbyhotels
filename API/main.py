@@ -1,70 +1,54 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
-import uuid
+from fastapi import FastAPI, Depends
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
+# Database URL - update it to your MySQL connection details
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin:Snape88!@chubby-db.cn0geogwil7k.us-east-2.rds.amazonaws.com/ChubbyHotels"
+
+# Create the database engine
+engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+
+# Create a session maker
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base class for our model
+Base = declarative_base()
+
+# Define the Properties table model
+class Property(Base):
+    __tablename__ = 'Properties'
+
+    PropertyID = Column(Integer, primary_key=True, index=True)
+    Name = Column(String(100), nullable=False)
+    Country = Column(String(50), nullable=False)
+    City = Column(String(50), nullable=False)
+    ImageLocation = Column(String(255), nullable=False)
+    IsChubby = Column(Boolean, default=False)
+    IsActive = Column(Boolean, default=True)
+
+# FastAPI instance
 app = FastAPI()
 
-# Sample in-memory database with properties
-properties = [
-    {
-        "id": str(uuid.uuid4()),  # Generate unique ID
-        "Name": "Luxury Villa",
-        "Country": "USA",
-        "City": "Los Angeles",
-        "Image": "images/villa.jpg",
-        "ischubby": False,
-        "isactive": True
-    },
-    {
-        "id": str(uuid.uuid4()),
-        "Name": "Cozy Cottage",
-        "Country": "UK",
-        "City": "London",
-        "Image": "images/cottage.jpg",
-        "ischubby": True,
-        "isactive": True
-    },
-    {
-        "id": str(uuid.uuid4()),
-        "Name": "Modern Apartment",
-        "Country": "Canada",
-        "City": "Toronto",
-        "Image": "images/apartment.jpg",
-        "ischubby": False,
-        "isactive": False
-    }
-]
+# Dependency to get the database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# Pydantic model for request validation
-class Property(BaseModel):
-    Name: str
-    Country: str
-    City: str
-    Image: str  # URL or file path
-    ischubby: bool
-    isactive: bool
-
-class PropertyResponse(Property):
-    id: str  # Unique property ID
-
-@app.get("/properties", response_model=List[PropertyResponse])
-def get_all_properties():
-    """Fetch all properties."""
+# Route to get all properties
+@app.get("/properties/")
+def get_properties(db: Session = Depends(get_db)):
+    properties = db.query(Property).all()  # Query all properties
     return properties
 
-@app.get("/properties/{property_id}", response_model=PropertyResponse)
-def get_property_by_id(property_id: str):
-    """Fetch a specific property by its ID."""
-    for property in properties:
-        if property["id"] == property_id:
-            return property
-    raise HTTPException(status_code=404, detail="Property not found")
-
-@app.post("/properties", response_model=PropertyResponse)
-def add_property(property: Property):
-    """Add a new property listing."""
-    new_property = property.dict()
-    new_property["id"] = str(uuid.uuid4())  # Generate unique ID
-    properties.append(new_property)
-    return new_property
+# Route to get a specific property by ID
+@app.get("/properties/{property_id}")
+def get_property(property_id: int, db: Session = Depends(get_db)):
+    property = db.query(Property).filter(Property.PropertyID == property_id).first()  # Get specific property by ID
+    if property is None:
+        return {"message": "Property not found"}
+    return property
