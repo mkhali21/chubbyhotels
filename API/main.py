@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 # Database URL - update it to your MySQL connection details
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin:CSC394!!@database-1.cn0geogwil7k.us-east-2.rds.amazonaws.com/ChubbyHotels"
@@ -30,6 +31,15 @@ class Property(Base):
 
 # FastAPI instance
 app = FastAPI()
+
+# CORS settings
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (use more restrictive settings in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Dependency to get the database session
 def get_db():
